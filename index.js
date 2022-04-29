@@ -132,3 +132,147 @@ const viewEmployeesByDepartment = () => {
     promptUser();
   });
 };
+
+//--------- ADD ---------
+
+// Add a new employee
+const addEmployee = () => {
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'firstName',
+      message: "What is the employee's first name?"
+    },
+    {
+      type: 'input',
+      name: 'lastName',
+      message: "What is the employee's last name?"
+    }
+  ])
+    .then(answer => {
+      const criteria = [answer.firstName, answer.lastName]
+      const roleSql = `SELECT role.id, role.title FROM role`;
+      db.query(roleSql, (error, data) => {
+        if (error) throw error;
+        const roles = data.map(({ id, title }) => ({ name: title, value: id }));
+        inquirer.prompt([
+          {
+            type: 'list',
+            name: 'role',
+            message: "What is the employee's role?",
+            choices: roles
+          }
+        ])
+          .then(roleChoice => {
+            const role = roleChoice.role;
+            criteria.push(role);
+            const managerSql = `SELECT * FROM employee`;
+            db.query(managerSql, (error, data) => {
+              if (error) throw error;
+              const managers = data.map(({ id, first_name, last_name }) => ({ name: first_name + " " + last_name, value: id }));
+              inquirer.prompt([
+                {
+                  type: 'list',
+                  name: 'manager',
+                  message: "Who is the employee's manager?",
+                  choices: managers
+                }
+              ])
+                .then(managerChoice => {
+                  const manager = managerChoice.manager;
+                  criteria.push(manager);
+                  const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                                  VALUES (?, ?, ?, ?)`;
+                  db.query(sql, criteria, (error) => {
+                    if (error) throw error;
+                    console.log("Employee has been added!")
+                    viewAllEmployees();
+                  });
+                });
+            });
+          });
+      });
+    });
+};
+
+// Add a new role
+const addRole = () => {
+  const sql = 'SELECT * FROM department'
+  db.query(sql, (error, response) => {
+    if (error) throw error;
+    let deptNamesArr = [];
+    response.forEach((department) => { deptNamesArr.push(department.name); });
+   deptNamesArr.push('Create Department');
+    inquirer
+      .prompt([
+        {
+          name: 'deptName',
+          type: 'list',
+          message: 'Which department is this new role in?',
+          choices: deptNamesArr
+        }
+      ])
+      .then((answer) => {
+        if (answer.deptName === 'Create Department') {
+          this.addDepartment();
+        } else {
+          addRole(answer);
+        }
+      });
+
+    const addRole = (deptData) => {
+      inquirer
+        .prompt([
+          {
+            name: 'newRole',
+            type: 'input',
+            message: 'What is the name of your new role?'
+          },
+          {
+            name: 'salary',
+            type: 'input',
+            message: 'What is the salary of this new role?'
+          }
+        ])
+        .then((answer) => {
+          let createdRole = answer.newRole;
+          let deptId;
+
+          response.forEach((department) => {
+            if (deptData.deptName === department.name) { deptId = department.id; }
+          });
+
+          let sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
+          let criteria = [createdRole, answer.salary, deptId];
+
+          db.query(sql, criteria, (error) => {
+            if (error) throw error;
+            console.log(`Role successfully created!`);
+            viewAllRoles();
+          });
+        });
+    };
+  });
+};
+
+// Add a new department
+const addDepartment = () => {
+  inquirer
+    .prompt([
+      {
+        name: 'newDept',
+        type: 'input',
+        message: 'What is the name of your new Department?'
+      }
+    ])
+    .then((answer) => {
+      let sql = `INSERT INTO department (name) VALUES (?)`;
+      db.query(sql, answer.newDept, (error, response) => {
+        if (error) throw error;
+        console.log(``);
+        console.log(answer.newDept + ` Department successfully created!`);
+        console.log(``);
+        viewAllDepartments();
+      });
+    });
+};
