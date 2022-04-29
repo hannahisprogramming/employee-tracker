@@ -276,3 +276,121 @@ const addDepartment = () => {
       });
     });
 };
+
+//--------- UPDATE ---------
+
+// Update an employee's role
+const updateEmployeeRole = () => {
+  let sql = `SELECT employee.id, employee.first_name, employee.last_name, role.id AS "role_id"
+              FROM employee, role, department WHERE department.id = role.department_id AND role.id = employee.role_id`;
+  db.query(sql, (error, response) => {
+    if (error) throw error;
+    let employeeNamesArr = [];
+    response.forEach((employee) => { employeeNamesArr.push(`${employee.first_name} ${employee.last_name}`); });
+
+    let sql = `SELECT role.id, role.title FROM role`;
+    db.query(sql, (error, response) => {
+      if (error) throw error;
+      let rolesArr = [];
+      response.forEach((role) => { rolesArr.push(role.title); });
+
+      inquirer
+        .prompt([
+          {
+            name: 'chosenEmployee',
+            type: 'list',
+            message: 'Which employee has a new role?',
+            choices: employeeNamesArr
+          },
+          {
+            name: 'chosenRole',
+            type: 'list',
+            message: 'What is their new role?',
+            choices: rolesArr
+          }
+        ])
+        .then((answer) => {
+          let newTitleId, employeeId;
+
+          response.forEach((role) => {
+            if (answer.chosenRole === role.title) {
+              newTitleId = role.id;
+            }
+          });
+
+          response.forEach((employee) => {
+            if (
+              answer.chosenEmployee ===
+              `${employee.first_name} ${employee.last_name}`
+            ) {
+              employeeId = employee.id;
+            }
+          });
+
+          let sql2 = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
+          db.query(
+            sql2,
+            [newTitleId, employeeId],
+            (error) => {
+              if (error) throw error;
+              console.log(`Employee Role Updated`);
+              promptUser();
+            }
+          );
+        });
+    });
+  });
+};
+
+// Update an employee's manager
+const updateEmployeeManager = () => {
+  let sql = `SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id
+              FROM employee`;
+  db.query(sql, (error, response) => {
+    let employeeNamesArr = [];
+    response.forEach((employee) => { employeeNamesArr.push(`${employee.first_name} ${employee.last_name}`); });
+
+    inquirer
+      .prompt([
+        {
+          name: 'chosenEmployee',
+          type: 'list',
+          message: 'Which employee has a new manager?',
+          choices: employeeNamesArr
+        },
+        {
+          name: 'newManager',
+          type: 'list',
+          message: 'Who is their manager?',
+          choices: employeeNamesArr
+        }
+      ])
+      .then((answer) => {
+        let employeeId, managerId;
+        response.forEach((employee) => {
+          if (
+            answer.chosenEmployee === `${employee.first_name} ${employee.last_name}`
+          ) {
+            employeeId = employee.id;
+          }
+
+          if (
+            answer.newManager === `${employee.first_name} ${employee.last_name}`
+          ) {
+            managerId = employee.id;
+          }
+        });
+
+        let sql = `UPDATE employee SET employee.manager_id = ? WHERE employee.id = ?`;
+        db.query(
+          sql,
+          [managerId, employeeId],
+          (error) => {
+            if (error) throw error;
+            console.log(`Employee Manager Updated`);
+            promptUser();
+          }
+        );
+      });
+  });
+};
