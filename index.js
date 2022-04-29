@@ -394,3 +394,120 @@ const updateEmployeeManager = () => {
       });
   });
 };
+
+//--------- DELETE ---------
+
+// Delete an employee
+const removeEmployee = () => {
+  let sql = `SELECT employee.id, employee.first_name, employee.last_name FROM employee`;
+
+  db.query(sql, (error, response) => {
+    if (error) throw error;
+    let employeeNamesArr = [];
+    response.forEach((employee) => { employeeNamesArr.push(`${employee.first_name} ${employee.last_name}`); });
+
+    inquirer
+      .prompt([
+        {
+          name: 'chosenEmployee',
+          type: 'list',
+          message: 'Which employee would you like to remove?',
+          choices: employeeNamesArr
+        }
+      ])
+      .then((answer) => {
+        let employeeId;
+
+        response.forEach((employee) => {
+          if (
+            answer.chosenEmployee ===
+            `${employee.first_name} ${employee.last_name}`
+          ) {
+            employeeId = employee.id;
+          }
+        });
+
+        let sql = `DELETE FROM employee WHERE employee.id = ?`;
+        db.query(sql, [employeeId], (error) => {
+          if (error) throw error;
+          console.log(`Employee Successfully Removed`);
+          viewAllEmployees();
+        });
+      });
+  });
+};
+
+// Delete a role
+const removeRole = () => {
+  let sql = `SELECT role.id, role.title FROM role`;
+
+  db.query(sql, (error, response) => {
+    if (error) throw error;
+    let roleNamesArr = [];
+    response.forEach((role) => { roleNamesArr.push(role.title); });
+
+    inquirer
+      .prompt([
+        {
+          name: 'chosenRole',
+          type: 'list',
+          message: 'Which role would you like to remove?',
+          choices: roleNamesArr
+        }
+      ])
+      .then((answer) => {
+        let roleId;
+
+        response.forEach((role) => {
+          if (answer.chosenRole === role.title) {
+            roleId = role.id;
+          }
+        });
+
+        let sql = `DELETE FROM role WHERE role.id = ?`;
+        db.query(sql, [roleId], (error) => {
+          if (error) throw error;
+          console.log(`Role Successfully Removed`);
+          viewAllRoles();
+        });
+      });
+  });
+};
+
+// Delete a department
+const removeDepartment = () => {
+  let sql = `SELECT department.id, department.name FROM department`;
+  db.query(sql, (error, response) => {
+    if (error) throw error;
+    let deptNamesArr = [];
+    response.forEach((department) => { deptNamesArr.push(department.name); });
+
+    inquirer
+      .prompt([
+        {
+          name: 'chosenDept',
+          type: 'list',
+          message: 'Which department would you like to remove?',
+          choices: deptNamesArr
+        }
+      ])
+      .then((answer) => {
+        let deptId;
+
+        response.forEach((department) => {
+          if (answer.chosenDept === department.name) {
+            deptId = department.id;
+          }
+        });
+
+        let sql = `DELETE FROM department WHERE department.id = ?`;
+        db.query(sql, [deptId], (error) => {
+          if (error) throw error;
+          console.log(`Department Successfully Removed`);
+          viewAllDepartments();
+        });
+      });
+  });
+};
+
+promptUser();
