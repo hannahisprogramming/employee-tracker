@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/hannahisprogramming/employee-tracker#readme",
   "dependencies": {
+    "inquirer": "^8.2.4",
     "mysql2": "^2.3.3"
   }
 }
